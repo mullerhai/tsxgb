@@ -1,0 +1,16 @@
+##requirements.txt
+
+numpy
+pandas
+statsmodels
+matplotlib
+patsy
+scikit-learn
+sklearn
+thrift
+pyyaml
+requests
+dpath
+future
+xgboost
+pymysql

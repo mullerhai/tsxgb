@@ -1,13 +1,7 @@
 #!/usr/bin/python
-import numpy as np
-import pandas as pd
 from . import ModelDbSyncer
 from ..events import MetricEvent
-from sklearn.linear_model import *
-from sklearn.preprocessing import *
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import GridSearchCV
-import sklearn.metrics
+
 
 # Computes various scores for models, such as precision, recall, and f1_score.
 

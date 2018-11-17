@@ -55,7 +55,7 @@ from thrift.protocol import TBinaryProtocol
 #           verbose_eval=True, xgb_model=None, callbacks=None, learning_rates=None
 
 logger=logging.getLogger("xgb_syncer")
-def xgb_train_fn(self,params,X_train,y_train,num_boost_round=700,lable="weiquan",early_stopping_rounds=20, verbose_eval=False, learning_rates=None,shuffle=False):
+def spark_train_fn(self,params,X_train,y_train,num_boost_round=700,lable="weiquan",early_stopping_rounds=20, verbose_eval=False, learning_rates=None,shuffle=False):
     dtrain=self.DMatrix(X_train,y_train)
     watchlist = [(dtrain, 'train')]
     print("begin work")

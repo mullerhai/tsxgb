@@ -1,19 +1,15 @@
-import  numpy as np
-import  pandas as pd
-import  xgboost as  xgb
-
-from xgb_native.XGBModelDBSyncer import *
-from xgb_native.XGBSyncableMetrics import *
+from modeldb.xgb_native.XGBModelDBSyncer import *
 import  logging
-from sklearn.model_selection import train_test_split
 
 from sklearn.metrics import *
 
 logger=logging.getLogger("xgboost_modeldb")
+from pymongo import MongoClient
 
-train_path='/home/muller/Documents/pyrepo/tsxgb/rummb/train_data.csv'
-test_path='/home/muller/Documents/pyrepo/tsxgb/rummb/test_data.csv'
-test_y_path='/home/muller/Documents/pyrepo/tsxgb/rummb/test_y.csv'
+
+train_path='./train_data.csv'
+test_path='./test_data.csv'
+test_y_path='./test_y.csv'
 train_data=pd.read_csv(train_path,header=0)
 test_x=pd.read_csv(test_path,header=0)
 test_data_y=pd.read_csv(test_y_path,header=0)
@@ -22,7 +18,7 @@ train_x=tmp_train_data.drop( labels='SalePrice',axis=1)
 train_y=train_data['SalePrice']
 
 test_y=test_data_y['SalePrice']
-print()
+
 params={
     'booster':'gbtree',#有两种模型可以选择gbtree和gblinear。gbtree使用基于树的模型进行提升计算，gblinear使用线性模型进行提升计算。缺省值为gbtree
 	'objective': 'reg:linear',#定义学习任务及相应的学习目标，可选的目标函数如下：reg:linear” –线性回归；“reg:logistic” –逻辑回归；“binary:logistic” –二分类的逻辑回归问题，输出为概率；
@@ -45,6 +41,8 @@ author = "muller"
 description = "predicting house "
 #host='localhost'
 host='10.201.8.9'
+collect='modeldb_metadata'
+mongo_cli = MongoClient(host,27017)
 syncer_obj = Syncer(
     NewOrExistingProject(name, author, description),
     DefaultExperiment(),
@@ -65,22 +63,20 @@ print(pred)
 score=mean_absolute_error(test_y,pred)
 print(score)
 print("sync")
-from pymongo import MongoClient
-import  gridfs
-from bson.objectid import ObjectId
-collect='modeldb_metadata'
-mongo_cli = MongoClient(host,27017)
+
 ros=model.mse_sync(test_y=test_y,y_pred=pred,df=train_x )
 print(ros)
 print(syncer_obj.buffer_list)
-savekey=model.save_model_sync(mongo_cli)
+
 import  pymysql
-host='10.201.6.123'
-port=3631
-user='rms_plus_w'
+host='10.201.35.123'
+port=3306
+user='rms_plus_'
 pwd='hTTkOzQ3tmBlNd8rK'
 db='modeldb_test'
 dbz=pymysql.connect(host=host,user=user,passwd=pwd,db=db,port=port,charset='utf8')
+
+savekey=model.save_model_sync(mongo_cli)
 print(savekey)
 syncer_obj.sync(save_key=savekey,sql_cli=dbz)
 # syncer_obj.sync()

@@ -1,8 +1,7 @@
 
 from modeldb.thrift.modeldb.ModelDBService import Client
-from modeldb.basic.ModelDbSyncerBase import Syncer
-from xgb_native.XGBModelDBSyncer import *
-from pymongo import MongoClient
+
+from modeldb.xgb_native.XGBModelDBSyncer import *
 import  gridfs
 from bson.objectid import ObjectId
 

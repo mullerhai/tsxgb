@@ -5,17 +5,15 @@ import numpy as np
 import time
 import warnings
 import sys
-from sklearn.model_selection import GridSearchCV,ParameterGrid,check_cv,train_test_split,cross_validate,cross_val_score
+from sklearn.model_selection import GridSearchCV, check_cv,train_test_split, cross_val_score
 #from sklearn.grid_search import _CVScoreTuple
-from sklearn.pipeline import Pipeline
 #from sklearn import datasets, linear_model, cross_validation
 #from sklearn.cross_validation import _safe_split, _score
 
 from sklearn.metrics.scorer import check_scoring
 from sklearn.utils.validation import _num_samples, indexable
-from sklearn.utils.multiclass import type_of_target
 from sklearn.externals.joblib import Parallel, delayed
-from sklearn.base import BaseEstimator, is_classifier, clone
+from sklearn.base import is_classifier, clone
 from ..events import FitEvent
 from ..events import MetricEvent
 

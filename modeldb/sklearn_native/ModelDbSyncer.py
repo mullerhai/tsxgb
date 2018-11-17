@@ -2,30 +2,19 @@
 This is the Syncer that is responsible for storing events in the ModelDB.
 Contains functions for overriding basic scikit-learn functions.
 """
-import sys
-import numpy as np
 import pandas as pd
 from future.utils import with_metaclass
 
 # sklearn imports
 from sklearn.linear_model import *
 from sklearn.preprocessing import *
-from sklearn.decomposition import *
 from sklearn.calibration import *
 from sklearn.ensemble import *
 from sklearn.tree import *
-from sklearn.feature_selection import *
-from sklearn.svm import *
 from sklearn.pipeline import Pipeline
 
 #from sklearn import cross_validation
 import sklearn.metrics
-from sklearn.model_selection import GridSearchCV,ParameterGrid,check_cv,train_test_split,cross_validate,cross_val_score
-
-from thrift import Thrift
-from thrift.transport import TSocket
-from thrift.transport import TTransport
-from thrift.protocol import TBinaryProtocol
 
 # modeldb imports
 from modeldb.utils.Singleton import Singleton
@@ -33,7 +22,6 @@ from . import GridCrossValidation
 from . CrossValidationScore import *
 from ..basic import *
 from ..events import *
-from ..thrift.modeldb import ModelDBService
 from ..thrift.modeldb import ttypes as modeldb_types
 
 

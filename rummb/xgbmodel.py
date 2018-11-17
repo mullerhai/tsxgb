@@ -1,11 +1,5 @@
-import  numpy as np
-import  pandas as pd
-import  xgboost as  xgb
 from modeldb.thrift.modeldb.ModelDBService import Client
-from modeldb.basic.ModelDbSyncerBase import Syncer
-from xgb_native.XGBModelDBSyncer import *
-from xgb_native.XGBModelDBSyncer import *
-from xgb_native.XGBSyncableMetrics import *
+from modeldb.xgb_native.XGBModelDBSyncer import *
 import  logging
 
 logger=logging.getLogger("xgboost_modeldb")
@@ -13,8 +7,6 @@ logger=logging.getLogger("xgboost_modeldb")
 
 from sklearn.datasets import load_iris
 
-from xgboost import plot_importance
-from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
 
 # read in the iris data
@@ -31,6 +23,14 @@ author = "muller"
 description = "predicting iris"
 #host='localhost'
 host='10.201.8.9'
+
+import  pymysql
+hostz='10.201.35.123'
+port=3306
+user='rms_plus_'
+pwd='hTTkOzQ3tmBlNd8rK'
+db='modeldb_test'
+dbz=pymysql.connect(host=hostz,user=user,passwd=pwd,db=db,port=port,charset='utf8')
 
 #syncer_obj=Syncer.init_sync_enable()
 #NewExperimentRun("erer",sha="insert id "),
@@ -60,8 +60,7 @@ params = {
 # model=xgb.train(params,Dtrain,num_boost_round=200)
 
 from pymongo import MongoClient
-import  gridfs
-from bson.objectid import ObjectId
+
 collect='modeldb_metadata'
 mongo_cli = MongoClient(host,27017)
 
@@ -74,33 +73,23 @@ pred= model.predict_sync(X_test)
 
 
 from sklearn.metrics import accuracy_score
-hah=accuracy_score(y_test,pred)
-print(hah)
+acc_score=accuracy_score(y_test,pred)
+print(acc_score)
 # result = y_test.reshape(1, -1) == pred
 # print('the accuracy:\t', float(np.sum(result)) / len(pred))
 
 model.accuracy_sync(y_test,pred,X_train)
 fsz=model.get_fscore()
-from  sklearn.metrics import *
-# score=f1_score(y_test,pred)
-# print(score)
-
-# print(pred)
-# model.auc_sync(X_test,pred,X_train)
 print(fsz)
+savekey=model.save_model_sync(mongo_cli)
+print(savekey)
+syncer_obj.sync(save_key=savekey,sql_cli=dbz)
 
-# for i in syncer_obj.buffer_list:
-#     print(i.__dict__.items())
 
-# print(syncer_obj.buffer_list)
-
-# runs_exps=cliz.getRunsAndExperimentsInProject(14)
-# for eid in  runs_exps.experimentRuns:
-#     print(eid)
-# exp_id=runs_exps.e
 cli = syncer_obj.client
 cliz = Client(cli._iprot)
 print(cliz)
+
 # syncer_obj.set_experiment_run()
 # cliz.getProjectOverviews()
 
@@ -110,31 +99,21 @@ for event in eventlist:
     if isinstance(event, MetricEvent):
         # eve = FitEvent(event)
         print(event.model)
-        event.model= "hello world"
+
     elif isinstance(event,FitEvent):
         print(event.model)
-        event.model= "hello world"
+
         # print(event.model.filepath)
         # event.model.filepath ="hello world"
 # prescor=compute_roc_auc_sync(model,test_y= y_test,y_pred=pred ,df= X_train)
 # print(prescor)
 
-# data_base =mongo_cli.get_database(collect)
-# fs = gridfs.GridFS(data_base)
-# import pickle
-# print(vars(model))
-# model_pkl_file= pickle.dumps(model)
-# model_meta_primarykey=fs.put(model_pkl_file)
-# print(model_meta_primarykey)
-
-savekey=model.save_model_sync(mongo_cli)
 
 # new_mo=xgb.load_model_sync(mongo_cli,'5bee664d87c5f627186b020b')
 #
 # predz= new_mo.predict_sync(X_test)
 
 
-from sklearn.metrics import accuracy_score
 # hah=accuracy_score(y_test,predz)
 # print(hah)
 # result = y_test.reshape(1, -1) == pred
@@ -152,22 +131,5 @@ from sklearn.metrics import accuracy_score
 #     NewExperimentRun("erer",sha="insert id "),ThriftConfig(host=host))
 # print(syncer_obj.experiment_run.sha)
 
-import  pymysql
-host='10.201.6.123'
-port=3631
-user='rms_plus_w'
-pwd='hTTkOzQ3tmBlNd8rK'
-db='modeldb_test'
-dbz=pymysql.connect(host=host,user=user,passwd=pwd,db=db,port=port,charset='utf8')
-print(savekey)
-syncer_obj.sync(save_key=savekey,sql_cli=dbz)
-#,host='10.201.6.123',port=3631,user='rms_plus_w',pwd='hTTkOzQ3tmBlNd8rK',db='modeldb_test'
-# eventlist = syncer_obj.buffer_list
-# for event in eventlist:
-#     #print(vars(event))
-#     if isinstance(event, MetricEvent):
-#         # eve = FitEvent(event)
-#         print(event.model)
-#
-#     elif isinstance(event,FitEvent):
-#         print(event.model)
+
+

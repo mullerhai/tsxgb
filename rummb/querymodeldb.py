@@ -1,20 +1,13 @@
 from modeldb.thrift.modeldb.ModelDBService import Client
-from modeldb.basic.ModelDbSyncerBase import Syncer
-from xgb_native.XGBModelDBSyncer import *
-from xgb_native.XGBSyncableMetrics import *
 from pymongo import MongoClient
-import  gridfs
-from bson.objectid import ObjectId
-from thrift import Thrift
-from thrift.transport import TSocket
-from thrift.transport import TTransport
-from thrift.protocol import TBinaryProtocol
 
-from xgb_native.modeldbQuery import *
+from modeldb.xgb_native.modeldbQuery import *
 name = "xgboost2"
 author = "muller"
 description = "predicting iris"
 host='10.201.8.9'
+mongo_cli=MongoClient(host,27017)
+
 syncer_obj = Syncer(
     NewOrExistingProject(name, author, description),
     DefaultExperiment(),
@@ -23,28 +16,45 @@ syncer_obj = Syncer(
 print(syncer_obj.project)
 
 cli = syncer_obj.client
-# print(cli)
-# print( type( cli._iprot))
-# print(cli._iprot)
+cliz = Client(cli._iprot)
 
+status=cliz.testConnection()
 
-mongo_cli=MongoClient("localhost",27017)
 
 modelQuery=ModeldbQuery(syncer_obj=syncer_obj,mongo_cli=mongo_cli)
 
-mdoe=modelQuery.load_model_by_gridfsid_model(modelfile_id='5bee664d87c5f627186b020b')
-print(mdoe)
+def load_model_assert():
+    mdoe=modelQuery.load_model_by_gridfsid_model(modelfile_id='5bee664d87c5f627186b020b')
+    print(mdoe)
 
-modelQuery.save_modelfile_gridfs(mdoe)
-prolist=modelQuery.query_all_projectlist()
-for pro in prolist:
-    print(vars(pro))
+def save_model_assert(model_obj):
+    modelQuery.save_modelfile_gridfs(model_obj)
 
-#exrun=modelQuery.query_modelList_byProjectId(14)
+def query_all_projects_assert():
+    prolist=modelQuery.query_all_projectlist()
+    for pro in prolist:
+        print(vars(pro))
 
-# mo=modelQuery.query_model_byExperimentRunId(155)
-# print(mo)
-#
+def query_model_byProId_assert(proId=14):
+    exrun=modelQuery.query_modelList_byProjectId(proId)
+    print(exrun)
+def query_model_byExperimentRunId_assert(exId=155):
+    mo=modelQuery.query_model_byExperimentRunId(exId)
+    print(mo)
+
+def get_modelRespone_assert(modedId=1):
+    mo=cliz.getModel(modedId)
+    print(mo.sha)
+
+def getGridfsId_byModelId_assert(model_id=3):
+    gridfsId=modelQuery.query_gridfsId_bymodelId(model_id)
+    print(gridfsId)
+def getGridfsId_byExRunId_assert(exrunId=2):
+    modelQuery.query_gridfsId_byExperimentRunId(exrunId)
+
+
+# print(cliz)
+# print(vars( cli._iprot))
 # moz=modelQuery.query_model_hyperList(133)
 #
 # ids=modelQuery.query_model_creatime(27)
@@ -58,18 +68,10 @@ for pro in prolist:
 # transport.open()
 # cliz= Client(protocol)
 
-cliz = Client(cli._iprot)
-#
-# print(cliz)
-# print(vars( cli._iprot))
-status=cliz.testConnection()
-print(status)
-#
-mo=cliz.getModel(1)
-print(mo.sha)
 
-modelQuery.query_gridfsId_bymodelId(3)
-modelQuery.query_gridfsId_byExperimentRunId(2)
+# print(status)
+#
+
 # print(mo.metrics)
 # print(mo.filepath)
 # print(mo.metadata)
