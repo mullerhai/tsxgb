@@ -51,31 +51,36 @@ from keras.layers import Conv2D, MaxPooling2D, Flatten,TimeDistributed
 from keras import backend as K
 from keras.models import Sequential,Model
 from keras.optimizers import SGD,Adagrad
-
-
-from pyspark.sql import Row
-from pyspark.ml.linalg import Vectors
-from pyspark.ml.classification import LogisticRegression,LinearSVCModel,LogisticRegressionModel,DecisionTreeClassificationModel,DecisionTreeRegressionModel,NaiveBayesModel,GBTClassificationModel,RandomForestClassificationModel,TreeEnsembleModel
-
 import logging
 
 logger=logging.getLogger(__name__)
 
 def fit_fn(self,x_train,y_train,epochs=5,batch_size=32,**params):
     logger.info("fit model for keras")
-    model=self.fit(x_train,y_train,params)
-    fit_event = FitEvent(model, self, x_train, params)
+    model=self.fit(x_train, y_train, epochs=epochs, batch_size=batch_size)
+    if params ==None:
+        params={'epochs':epochs,'batch_size':batch_size}
+    fit_event=FitEvent(model,self,x_train,params)
     Syncer.instance.add_to_buffer(event=fit_event)
-    return
+    return model
 
 
-def  compile_fn(self,loss,optimizer,metrics):
+def  compile_fn(self,loss='categorical_crossentropy',optimizer= SGD(lr=0.01, momentum=0.9, nesterov=True),metrics=['accuracy']):
     logger.info("compile the model")
+    from keras.optimizers import SGD
 
+    model=self.compile(loss=loss, optimizer=optimizer,metrics=metrics)
     # transform_event=TransformEvent()
     # Syncer.instance.add_to_buffer(event=transform_event)
+    return model
 
 
+def  train_batch_fn(self,x_batch,y_batch):
+    logger.info("batch train the dataset")
+    model=self.train_on_batch(x_batch, y_batch)
+    # transform_event=TransformEvent()
+    # Syncer.instance.add_to_buffer(event=transform_event)
+    return model
 
 def convert_prediction_to_event(model, predict_array, x):
     predict_df = pd.DataFrame(predict_array)
@@ -95,9 +100,10 @@ def convert_prediction_to_event(model, predict_array, x):
     Syncer.instance.add_to_buffer(predict_event)
     return predict_array
 
-def  predict_fn(self,x_test,batch_size=128,**params):
+
+def  predict_fn(self,x_test,batch_size=128):
     logger.info("predict use the model")
-    predict_array = self.transform(x_test, params)
+    predict_array = self.predict(x_test, batch_size=batch_size)
     return convert_prediction_to_event(self, predict_array, x_test)
 
 
@@ -171,8 +177,7 @@ def metrics_fn(self,metric_func, test_y, y_pred, df, prediction_col='', label_co
         logger.error(str(e))
         pass
 
-def metrics_fn(self,metric_func):
-    logger.info("metrics the model ")
+
 
     metric_event=MetricEvent()
     Syncer.instance.add_to_buffer(event=metric_event)
@@ -183,16 +188,16 @@ class Syncer(with_metaclass(Singleton, ModelDbSyncerBase.Syncer)):
     instance = None
     def __init__(self, project_config, experiment_config, experiment_run_config,
             thrift_config=None):
-        self.enable_pyspark_fn()
+        self.enable_keras_fn()
         self.local_id_to_path = {}
         Syncer.instance = self
 
         super(Syncer, self).__init__(project_config, experiment_config,experiment_run_config, thrift_config)
 
     def __str__(self):
-        return  "pyspark_syncer"
+        return  "keras_syncer"
 
-    def  enable_pyspark_fn(self):
+    def  enable_keras_fn(self):
         from keras.models import Model,Sequential
         for cls in [Model,Sequential]:
             setattr(cls,"fit_sync",fit_fn)

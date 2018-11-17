@@ -5,7 +5,8 @@ from modeldb.xgb_native.modeldbQuery import *
 name = "xgboost2"
 author = "muller"
 description = "predicting iris"
-host='10.201.8.9'
+#host='10.201.8.9'
+host='192.168.199.102'
 mongo_cli=MongoClient(host,27017)
 
 syncer_obj = Syncer(
@@ -51,6 +52,13 @@ def getGridfsId_byModelId_assert(model_id=3):
     print(gridfsId)
 def getGridfsId_byExRunId_assert(exrunId=2):
     modelQuery.query_gridfsId_byExperimentRunId(exrunId)
+
+if __name__ == '__main__':
+    getGridfsId_byModelId_assert(1)
+    get_modelRespone_assert(1)
+    getGridfsId_byExRunId_assert(1)
+    query_all_projects_assert()
+    query_model_byExperimentRunId_assert(1)
 
 
 # print(cliz)

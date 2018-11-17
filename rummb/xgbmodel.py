@@ -22,15 +22,12 @@ name = "xgboost2"
 author = "muller"
 description = "predicting iris"
 #host='localhost'
-host='10.201.8.9'
-
+#host='10.201.8.9'
+host='192.168.199.102'
 import  pymysql
-hostz='10.201.35.123'
-port=3306
-user='rms_plus_'
-pwd='hTTkOzQ3tmBlNd8rK'
-db='modeldb_test'
-dbz=pymysql.connect(host=hostz,user=user,passwd=pwd,db=db,port=port,charset='utf8')
+#hostz='10.201.35.123'
+
+
 
 #syncer_obj=Syncer.init_sync_enable()
 #NewExperimentRun("erer",sha="insert id "),
@@ -82,7 +79,20 @@ model.accuracy_sync(y_test,pred,X_train)
 fsz=model.get_fscore()
 print(fsz)
 savekey=model.save_model_sync(mongo_cli)
+
 print(savekey)
+hostz='192.168.199.102'
+# user='rms_plus_'
+# pwd='hTTkOzQ3tmBlNd8rK'
+port=3306
+#user='rms_plus_'
+#pwd='hTTkOzQ3tmBlNd8rK'
+user='muller'
+pwd='7104'
+
+db='modeldb_test'
+dbz=pymysql.connect(host=hostz,user=user,passwd=pwd,db=db,port=port,charset='utf8')
+
 syncer_obj.sync(save_key=savekey,sql_cli=dbz)
 
 

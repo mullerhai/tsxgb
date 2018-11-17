@@ -40,7 +40,8 @@ name = "xgb_pre_price"
 author = "muller"
 description = "predicting house "
 #host='localhost'
-host='10.201.8.9'
+#host='10.201.8.9'
+host='192.168.199.102'
 collect='modeldb_metadata'
 mongo_cli = MongoClient(host,27017)
 syncer_obj = Syncer(
@@ -69,10 +70,12 @@ print(ros)
 print(syncer_obj.buffer_list)
 
 import  pymysql
-host='10.201.35.123'
+#host='10.201.35.123'
 port=3306
-user='rms_plus_'
-pwd='hTTkOzQ3tmBlNd8rK'
+#user='rms_plus_'
+#pwd='hTTkOzQ3tmBlNd8rK'
+user='muller'
+pwd='7104'
 db='modeldb_test'
 dbz=pymysql.connect(host=host,user=user,passwd=pwd,db=db,port=port,charset='utf8')
 
