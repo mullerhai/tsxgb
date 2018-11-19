@@ -21,7 +21,6 @@ from sklearn.pipeline import Pipeline
 from modeldb.utils.Singleton import Singleton
 from modeldb.basic import *
 from modeldb.events import *
-
 from modeldb.thrift.modeldb import  ttypes as modeldb_types
 from modeldb.thrift.modeldb import  ModelDBService
 # from ..basic import *

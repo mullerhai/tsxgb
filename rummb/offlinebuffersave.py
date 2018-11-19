@@ -1,6 +1,6 @@
 #from modeldb.thrift.modeldb.ModelDBService import Client
-from ..modeldb.xgb_native.XGBModelDBSyncer import *
-
+# from ..modeldb.xgb_native.XGBModelDBSyncer import *
+from  modeldb.xgb_native.XGBModelDBSyncer import *
 import  logging
 
 logger=logging.getLogger("xgboost_modeldb")
