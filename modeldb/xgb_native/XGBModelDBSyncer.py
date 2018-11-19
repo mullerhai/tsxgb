@@ -54,7 +54,7 @@ from thrift.protocol import TBinaryProtocol
 #           verbose_eval=True, xgb_model=None, callbacks=None, learning_rates=None
 
 logger=logging.getLogger("xgb_syncer")
-def xgb_train_fn(self,params,X_train,y_train,num_boost_round=700,lable="weiquan",early_stopping_rounds=20, verbose_eval=False, learning_rates=None,shuffle=False):
+def xgb_train_fn(self,params,X_train,y_train,num_boost_round=700,lable="weiquan",early_stopping_rounds=20, verbose_eval=False, learning_rates=None,shuffle=False,bufferlist=None):
     dtrain=self.DMatrix(X_train,y_train)
     watchlist = [(dtrain, 'train')]
     print("begin work")
@@ -74,7 +74,10 @@ def xgb_train_fn(self,params,X_train,y_train,num_boost_round=700,lable="weiquan"
     #         print("fit event create finish")
     # else:
     fit_event=FitEvent(model,self,X_train,params)
-    Syncer.instance.add_to_buffer(event=fit_event)
+    if bufferlist != None:
+        bufferlist.append(fit_event)
+    else:
+        Syncer.instance.add_to_buffer(event=fit_event)
     print("get model")
     self.params=params
     def get_params(self):
@@ -84,28 +87,34 @@ def xgb_train_fn(self,params,X_train,y_train,num_boost_round=700,lable="weiquan"
     setattr(ModelConfig, 'get_params', get_params)
     return model
 
-def XGBRegressor_fit_fn(self, X_train, y_train,max_depth, n_estimators,sample_weight=None):
+def XGBRegressor_fit_fn(self, X_train, y_train,max_depth, n_estimators,sample_weight=None,bufferlist=None):
     if type(self)==XGBRegressor or isinstance(self,XGBRegressor):
         model=self(n_estimators=n_estimators, max_depth=max_depth).fit(X_train, y_train)
     else :
         model = self.XGBRegressor(n_estimators=n_estimators, max_depth=max_depth).fit(X_train, y_train)
     fit_event = FitEvent(model, self, X_train)
-    Syncer.instance.add_to_buffer(fit_event)
+    if bufferlist !=None:
+        bufferlist.append(fit_event)
+    else :
+        Syncer.instance.add_to_buffer(fit_event)
     return model
 
-def XGBClassifier_fit_fn(self, X_train, y_train,max_depth=3, n_estimators=100,objective='reg:linear',silent=0,nthread=-1,sample_weight=None):
+def XGBClassifier_fit_fn(self, X_train, y_train,max_depth=3, n_estimators=100,objective='reg:linear',silent=0,nthread=-1,sample_weight=None,bufferlist=None):
    if type(self)==XGBClassifier or isinstance(self,XGBClassifier):
        model = self.XGBClassifier(nthread=nthread, max_depth=max_depth, silent=silent, objective=objective,n_estimators=n_estimators).fit(X_train,y_train)
    else:
         model=self.XGBClassifier(nthread=nthread, max_depth=max_depth, silent=silent,objective=objective, n_estimators=n_estimators).fit(X_train,y_train)
    fit_event = FitEvent(model, self, X_train)
-   Syncer.instance.add_to_buffer(fit_event)
+   if bufferlist !=None:
+       bufferlist.append(fit_event)
+   else:
+        Syncer.instance.add_to_buffer(fit_event)
    return model
 
 
 
 
-def convert_prediction_to_event(model, predict_array, x):
+def convert_prediction_to_event(model, predict_array, x,bufferlist=None):
     predict_df = pd.DataFrame(predict_array)
     # Assign names to the predicted columns.
     # This is to ensure there are no merge conflicts when joining.
@@ -120,18 +129,21 @@ def convert_prediction_to_event(model, predict_array, x):
     else:
         new_df = x.join(predict_df)
     predict_event = TransformEvent(x, new_df, model)
-    Syncer.instance.add_to_buffer(predict_event)
+    if bufferlist!=None:
+        bufferlist.append(predict_event)
+    else :
+        Syncer.instance.add_to_buffer(predict_event)
     return predict_array
 
 
-def xgb_predict_fn(self, df):
+def xgb_predict_fn(self, df,bufferlist):
     """
     Overrides the predict function for models, provided that the predict
     function takes in one argument.
     """
     x=xgb.DMatrix(df)
     predict_array = self.predict(x)
-    return convert_prediction_to_event(self, predict_array, df)
+    return convert_prediction_to_event(self, predict_array, df,bufferlist)
    # return predict_array
 
 
@@ -295,57 +307,79 @@ def fit_fn_pipeline(self, x, y):
 
     Syncer.instance.add_to_buffer(pipeline_event)
 
-def compute_roc_auc_sync(self,test_y,y_pred,df,prediction_col='',label_col='',**params):
+def compute_roc_auc_sync(self,test_y,y_pred,df,prediction_col='',label_col='',bufferlist=None,**params):
     roc_auc=metrics.roc_auc_score(test_y,y_pred)
     print("compute is "+ str(roc_auc))
     metrics_event=MetricEvent(df,self,label_col,prediction_col,metrics.roc_auc_score.__name__,roc_auc)
-    Syncer.instance.add_to_buffer(metrics_event)
+    if bufferlist != None:
+        bufferlist.append(metrics_event)
+    else:
+        Syncer.instance.add_to_buffer(metrics_event)
 
     return roc_auc
 
-def compute_mean_absolute_error(self,test_y,y_pred,df,prediction_col='',label_col='',**params):
+def compute_mean_absolute_error(self,test_y,y_pred,df,prediction_col='',label_col='',bufferlist=None,**params):
     mae=mean_absolute_error(test_y,y_pred=y_pred)
     print("compute is "+ str(mae))
     metrics_event=MetricEvent(df,self,label_col,prediction_col,mean_absolute_error.__name__,mae)
-    Syncer.instance.add_to_buffer(metrics_event)
+    if bufferlist != None:
+        bufferlist.append(metrics_event)
+    else:
+        Syncer.instance.add_to_buffer(metrics_event)
     return mae
 
-def  compute_mean_squared_error(self,test_y,y_pred,df,prediction_col='',label_col='',**params):
+def  compute_mean_squared_error(self,test_y,y_pred,df,prediction_col='',label_col='',bufferlist=None,**params):
     mse=mean_squared_error(test_y,y_pred=y_pred)
     metrics_event=MetricEvent(df,self,label_col,prediction_col,mean_squared_error.__name__,mse)
-    Syncer.instance.add_to_buffer(metrics_event)
+    if bufferlist != None:
+        bufferlist.append(metrics_event)
+    else:
+        Syncer.instance.add_to_buffer(metrics_event)
     return mse
 
 
-def compute_accuracy_score_sync(self,test_y,y_pred,df,prediction_col='',label_col='',**params):
+def compute_accuracy_score_sync(self,test_y,y_pred,df,prediction_col='',label_col='',bufferlist=None,**params):
     y_pred_binary = (y_pred >= 0.5) * 1
     accuracy_score=metrics.accuracy_score(test_y,y_pred_binary)
     metrics_event=MetricEvent(df,self,label_col,prediction_col,metrics.accuracy_score.__name__,accuracy_score)
-    Syncer.instance.add_to_buffer(metrics_event)
+    if bufferlist != None:
+        bufferlist.append(metrics_event)
+    else:
+        Syncer.instance.add_to_buffer(metrics_event)
     return accuracy_score
 
-def compute_recall_score_sync(self,test_y,y_pred,df,prediction_col='',lable_col='',**params):
+def compute_recall_score_sync(self,test_y,y_pred,df,prediction_col='',lable_col='',bufferlist=None,**params):
     y_pred_binary = (y_pred >= 0.5) * 1
     recall_score=metrics.recall_score(test_y,y_pred_binary)
     metrics_event=MetricEvent(df,self,lable_col,prediction_col,metrics.recall_score.__name__,recall_score)
-    Syncer.instance.add_to_buffer(metrics_event)
+    if bufferlist != None:
+        bufferlist.append(metrics_event)
+    else:
+        Syncer.instance.add_to_buffer(metrics_event)
     return recall_score
 
-def compute_precision_score_sync(self,test_y,y_pred,df,prediction_col='',lable_col='',**params):
+def compute_precision_score_sync(self,test_y,y_pred,df,prediction_col='',lable_col='',bufferlist=None,**params):
     y_pred_binary = (y_pred >= 0.5) * 1
     print("hello precision")
     precision_score=metrics.precision_score(test_y,y_pred_binary)
     metrics_event=MetricEvent(df,self,lable_col,prediction_col,metrics.precision_score.__name__,precision_score)
-    Syncer.instance.add_to_buffer(metrics_event)
+    if bufferlist != None:
+        bufferlist.append(metrics_event)
+    else:
+        Syncer.instance.add_to_buffer(metrics_event)
     print(Syncer.buffer_list)
     return precision_score
 
-def compute_f1_score_sync(self,test_y,y_pred,df,prediction_col='',lable_col='',**params):
+def compute_f1_score_sync(self,test_y,y_pred,df,prediction_col='',lable_col='',bufferlist=None,**params):
     y_pred_binary = (y_pred >= 0.5) * 1
     f1_score=metrics.f1_score(test_y,y_pred_binary)
     metrics_event=MetricEvent(df,self,lable_col,prediction_col,metrics.f1_score.__name__,f1_score)
-    Syncer.instance.add_to_buffer(metrics_event)
+    if bufferlist != None:
+        bufferlist.append(metrics_event)
+    else:
+        Syncer.instance.add_to_buffer(metrics_event)
     return  f1_score
+
 
 def check_valid_pipeline(steps):
     """
@@ -372,7 +406,7 @@ def check_valid_pipeline(steps):
                         % (estimator, type(estimator)))
 
 
-def fit_fn_grid_search_fn(self, x_train, y_train,params,cv=5,scoring='mae',n_jobs=2,verbose=2):
+def fit_fn_grid_search_fn(self, x_train, y_train,params,cv=5,scoring='mae',n_jobs=2,verbose=2,bufferlist=None):
     """
     Overrides GridSearch Cross Validation's fit function
     """
@@ -525,6 +559,11 @@ class Syncer(with_metaclass(Singleton, ModelDbSyncerBase.Syncer)):
     thrift classes
     '''
 
+    def set_buffer_list(self,buffer_list=None):
+        if buffer_list !=None:
+            for buffer in buffer_list:
+                self.add_to_buffer(buffer)
+
 
 
     def set_columns(self, df):
@@ -619,22 +658,25 @@ class Syncer(with_metaclass(Singleton, ModelDbSyncerBase.Syncer)):
     def sync_all(self, metadata_path):
         super(Syncer,self).sync_all(metadata_path)
 
-    def sync(self,save_key=None,sql_cli=None):
+    def sync(self,buffer_list=None,save_key=None,sql_cli=None):
         super(Syncer, self).sync()
-        if hasattr(self, 'experiment_run'):
-            if isinstance(self.experiment_run, ExperimentRun):
-                experiment_runId=self.experiment_run.id
-                print(experiment_runId)
-                print(save_key)
-                #import  pymysql
-                #sql_cli=pymysql.connect(host=host,user=user,passwd=pwd,db=db,port=port,charset='utf8')
-                # cursor=sql_cli.cursor()
-                if save_key!=None and sql_cli!=None: #"5bee664d87c5f627186b020b"
-                    cursor = sql_cli.cursor()
-                    sql="update ExperimentRun set `sha` = '"+str(save_key )+" ' where `id`= " + str(experiment_runId)
-                    print(sql)
-                    cursor.execute(sql)
-                    sql_cli.commit()
+        if buffer_list!=None:
+            self.set_buffer_list(buffer_list)
+        else :
+            if hasattr(self, 'experiment_run'):
+                if isinstance(self.experiment_run, ExperimentRun):
+                    experiment_runId=self.experiment_run.id
+                    print(experiment_runId)
+                    print(save_key)
+                    #import  pymysql
+                    #sql_cli=pymysql.connect(host=host,user=user,passwd=pwd,db=db,port=port,charset='utf8')
+                    # cursor=sql_cli.cursor()
+                    if save_key!=None and sql_cli!=None: #"5bee664d87c5f627186b020b"
+                        cursor = sql_cli.cursor()
+                        sql="update ExperimentRun set `sha` = '"+str(save_key )+" ' where `id`= " + str(experiment_runId)
+                        print(sql)
+                        cursor.execute(sql)
+                        sql_cli.commit()
 
 
     # def sync(self,model_obj=None,monogo_cli=None,collect='modeldb_metadata'):
